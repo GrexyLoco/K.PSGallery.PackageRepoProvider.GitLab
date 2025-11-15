@@ -26,6 +26,15 @@
     # Minimum version of the PowerShell engine required by this module
     PowerShellVersion = '7.0'
 
+    # Nested modules to import as part of this module
+    NestedModules = @(
+        'Private/Invoke-RegisterRepo.ps1',
+        'Private/Invoke-Publish.ps1',
+        'Private/Invoke-Install.ps1',
+        'Private/Invoke-Import.ps1',
+        'Private/Invoke-RemoveRepo.ps1'
+    )
+
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
     FunctionsToExport = @(
         'Invoke-RegisterRepo',
