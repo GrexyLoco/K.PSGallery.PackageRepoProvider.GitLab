@@ -12,12 +12,3 @@ foreach ($import in $Private) {
         Write-Error "Failed to import function $($import.FullName): $_"
     }
 }
-
-# Export module members
-Export-ModuleMember -Function @(
-    'Invoke-RegisterRepo',
-    'Invoke-Publish',
-    'Invoke-Install',
-    'Invoke-Import',
-    'Invoke-RemoveRepo'
-)

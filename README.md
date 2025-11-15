@@ -66,7 +66,7 @@ Use [K.PSGallery.PackageRepoProvider.GitHub](https://github.com/GrexyLoco/K.PSGa
 
 ## Contributing
 
-Contributions are welcome! If you're interested in implementing GitLab Package Registry support:
+This is a placeholder/stub module for future GitLab Package Registry support. If you're interested in implementing full functionality:
 
 1. Fork this repository
 2. Create a feature branch (`git checkout -b feature/gitlab-implementation`)
@@ -74,8 +74,6 @@ Contributions are welcome! If you're interested in implementing GitLab Package R
 4. Implement the GitLab-specific logic
 5. Add comprehensive tests
 6. Submit a pull request
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## Related Projects
 
