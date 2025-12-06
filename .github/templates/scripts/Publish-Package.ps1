@@ -154,9 +154,32 @@ catch {
         Unregister-PSResourceRepository -Name $repoName -ErrorAction SilentlyContinue
         Register-PSResourceRepository -Name $repoName -Uri $registryUri -Trusted -ErrorAction Stop
         
-        # Find module path (cross-platform)
-        $moduleSubPath = Join-Path -Path '.' -ChildPath $ModuleName
-        $modulePath = if (Test-Path $moduleSubPath) { $moduleSubPath } else { '.' }
+        # Find module manifest using robust discovery
+        $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+        $findManifestScript = Join-Path $scriptDir 'Find-ModuleManifest.ps1'
+        
+        if (-not (Test-Path $findManifestScript)) {
+            Write-Warning "Find-ModuleManifest.ps1 not found, using legacy discovery"
+            $moduleSubPath = Join-Path -Path '.' -ChildPath $ModuleName
+            $modulePath = if (Test-Path $moduleSubPath) { $moduleSubPath } else { '.' }
+        } else {
+            $manifestResult = & $findManifestScript -ModuleName $ModuleName -SearchPath '.' -Verbose
+            
+            if (-not $manifestResult.IsValid) {
+                $errorMsg = "Manifest validation failed:`n" + ($manifestResult.Errors -join "`n")
+                throw $errorMsg
+            }
+            
+            if ($manifestResult.Warnings.Count -gt 0) {
+                foreach ($warning in $manifestResult.Warnings) {
+                    Write-Warning $warning
+                }
+            }
+            
+            # Use directory containing the manifest
+            $modulePath = Split-Path -Parent $manifestResult.ManifestPath
+            Write-Output "✅ Using manifest: $($manifestResult.ManifestPath) (Method: $($manifestResult.ValidationMethod))"
+        }
         
         # Publish module
         Publish-PSResource `
