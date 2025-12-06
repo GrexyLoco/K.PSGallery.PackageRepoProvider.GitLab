@@ -50,14 +50,13 @@ param(
 # ═══════════════════════════════════════════════════════════════════════════
 # 📋 Summary Header
 # ═══════════════════════════════════════════════════════════════════════════
-Write-Output "## 📦 Package Publishing" >> $env:GITHUB_STEP_SUMMARY
+Write-Output "<details open><summary>📦 Package Publishing</summary>" >> $env:GITHUB_STEP_SUMMARY
 Write-Output "" >> $env:GITHUB_STEP_SUMMARY
 Write-Output "| Property | Value |" >> $env:GITHUB_STEP_SUMMARY
 Write-Output "|----------|-------|" >> $env:GITHUB_STEP_SUMMARY
 Write-Output "| **Module** | ``$ModuleName`` |" >> $env:GITHUB_STEP_SUMMARY
 Write-Output "| **Version** | ``$NewVersion`` |" >> $env:GITHUB_STEP_SUMMARY
 Write-Output "| **Target** | GitHub Packages |" >> $env:GITHUB_STEP_SUMMARY
-Write-Output "" >> $env:GITHUB_STEP_SUMMARY
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 🔧 Configuration
@@ -128,10 +127,14 @@ try {
         -Token $GitHubToken
     
     # Success summary
+    Write-Output "" >> $env:GITHUB_STEP_SUMMARY
     Write-Output "### ✅ Published via K.PSGallery.PackageRepoProvider" >> $env:GITHUB_STEP_SUMMARY
     Write-Output "" >> $env:GITHUB_STEP_SUMMARY
     Write-Output "- **Registry:** ``$registryUri``" >> $env:GITHUB_STEP_SUMMARY
     Write-Output "- **Package:** ``$ModuleName@$NewVersion``" >> $env:GITHUB_STEP_SUMMARY
+    Write-Output "- **View Package:** [GitHub Packages](https://github.com/$RepositoryOwner?tab=packages)" >> $env:GITHUB_STEP_SUMMARY
+    Write-Output "" >> $env:GITHUB_STEP_SUMMARY
+    Write-Output "</details>" >> $env:GITHUB_STEP_SUMMARY
     
     "package-published=true" >> $env:GITHUB_OUTPUT
     
@@ -140,7 +143,9 @@ try {
 catch {
     Write-Output "⚠️ PackageRepoProvider failed: $($_.Exception.Message)"
     Write-Output "🔄 Falling back to Publish-PSResource..."
+    Write-Output "" >> $env:GITHUB_STEP_SUMMARY
     Write-Output "### ⚠️ Fallback: Publish-PSResource" >> $env:GITHUB_STEP_SUMMARY
+    Write-Output "" >> $env:GITHUB_STEP_SUMMARY
     
     # ═══════════════════════════════════════════════════════════════════════
     # 🔄 Fallback: Built-in Publish-PSResource
@@ -190,6 +195,9 @@ catch {
         
         Write-Output "- ✅ Published via Publish-PSResource" >> $env:GITHUB_STEP_SUMMARY
         Write-Output "- **Package:** ``$ModuleName@$NewVersion``" >> $env:GITHUB_STEP_SUMMARY
+        Write-Output "- **View Package:** [GitHub Packages](https://github.com/$RepositoryOwner?tab=packages)" >> $env:GITHUB_STEP_SUMMARY
+        Write-Output "" >> $env:GITHUB_STEP_SUMMARY
+        Write-Output "</details>" >> $env:GITHUB_STEP_SUMMARY
         
         "package-published=true" >> $env:GITHUB_OUTPUT
         
@@ -197,11 +205,14 @@ catch {
     }
     catch {
         Write-Error "❌ Package publishing failed: $($_.Exception.Message)"
+        Write-Output "" >> $env:GITHUB_STEP_SUMMARY
         Write-Output "### ❌ Publishing Failed" >> $env:GITHUB_STEP_SUMMARY
         Write-Output "" >> $env:GITHUB_STEP_SUMMARY
         Write-Output "``````" >> $env:GITHUB_STEP_SUMMARY
         Write-Output $_.Exception.Message >> $env:GITHUB_STEP_SUMMARY
         Write-Output "``````" >> $env:GITHUB_STEP_SUMMARY
+        Write-Output "" >> $env:GITHUB_STEP_SUMMARY
+        Write-Output "</details>" >> $env:GITHUB_STEP_SUMMARY
         
         "package-published=false" >> $env:GITHUB_OUTPUT
         exit 1

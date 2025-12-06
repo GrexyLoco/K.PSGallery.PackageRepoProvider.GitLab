@@ -48,8 +48,11 @@ if ($ManualVersion) {
     "should-release=true" >> $env:GITHUB_OUTPUT
     "bump-type=manual" >> $env:GITHUB_OUTPUT
     
-    "## 📌 Manual Version Override" >> $env:GITHUB_STEP_SUMMARY
+    "<details open><summary>📌 Manual Version Override</summary>" >> $env:GITHUB_STEP_SUMMARY
+    "" >> $env:GITHUB_STEP_SUMMARY
     "**Override Version:** ``$ManualVersion``" >> $env:GITHUB_STEP_SUMMARY
+    "" >> $env:GITHUB_STEP_SUMMARY
+    "</details>" >> $env:GITHUB_STEP_SUMMARY
 } else {
     # Auto-detected version
     Write-Output "🔍 Auto-detected bump type: $AutoBumpType"
@@ -61,13 +64,21 @@ if ($ManualVersion) {
     if ($AutoBumpType -eq 'none') {
         "should-release=false" >> $env:GITHUB_OUTPUT
         
-        "## 🔁 No Release Required" >> $env:GITHUB_STEP_SUMMARY
+        "<details open><summary>🔁 No Release Required</summary>" >> $env:GITHUB_STEP_SUMMARY
+        "" >> $env:GITHUB_STEP_SUMMARY
         "No version changes detected. Workflow will exit gracefully." >> $env:GITHUB_STEP_SUMMARY
+        "" >> $env:GITHUB_STEP_SUMMARY
+        "</details>" >> $env:GITHUB_STEP_SUMMARY
     } else {
         "should-release=true" >> $env:GITHUB_OUTPUT
         
-        "## ⬆️ Version Bump Detected" >> $env:GITHUB_STEP_SUMMARY
-        "**Bump Type:** ``$AutoBumpType``" >> $env:GITHUB_STEP_SUMMARY
-        "**New Version:** ``$AutoNewVersion``" >> $env:GITHUB_STEP_SUMMARY
+        "<details open><summary>⬆️ Version Bump Detected</summary>" >> $env:GITHUB_STEP_SUMMARY
+        "" >> $env:GITHUB_STEP_SUMMARY
+        "| Property | Value |" >> $env:GITHUB_STEP_SUMMARY
+        "|----------|-------|" >> $env:GITHUB_STEP_SUMMARY
+        "| **Bump Type** | ``$AutoBumpType`` |" >> $env:GITHUB_STEP_SUMMARY
+        "| **New Version** | ``$AutoNewVersion`` |" >> $env:GITHUB_STEP_SUMMARY
+        "" >> $env:GITHUB_STEP_SUMMARY
+        "</details>" >> $env:GITHUB_STEP_SUMMARY
     }
 }

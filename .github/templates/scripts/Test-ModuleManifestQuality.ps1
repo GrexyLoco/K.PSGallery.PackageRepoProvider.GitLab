@@ -434,7 +434,7 @@ if ($env:GITHUB_OUTPUT) {
 # Generate GitHub Step Summary
 if ($env:GITHUB_STEP_SUMMARY) {
     $summaryBuilder = [System.Text.StringBuilder]::new()
-    [void]$summaryBuilder.AppendLine("## 🔍 Module Manifest Quality Gate")
+    [void]$summaryBuilder.AppendLine("<details open><summary>🔍 Module Manifest Quality Gate</summary>")
     [void]$summaryBuilder.AppendLine("")
     [void]$summaryBuilder.AppendLine("| Metric | Count |")
     [void]$summaryBuilder.AppendLine("|--------|-------|")
@@ -460,7 +460,8 @@ if ($env:GITHUB_STEP_SUMMARY) {
         [void]$summaryBuilder.AppendLine("")
     }
     
-    [void]$summaryBuilder.AppendLine("---")
+    [void]$summaryBuilder.AppendLine("</details>")
+    [void]$summaryBuilder.AppendLine("")
     $summaryBuilder.ToString() >> $env:GITHUB_STEP_SUMMARY
 }
 
