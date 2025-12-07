@@ -92,7 +92,8 @@ function Install-PackageRepoProvider {
     
     # Install the provider module
     Write-Output "📥 Installing K.PSGallery.PackageRepoProvider..."
-    Install-PSResource -Name 'K.PSGallery.PackageRepoProvider' `
+    $moduleName = 'K.PSGallery.PackageRepoProvider'
+    Install-PSResource -Name $moduleName `
         -Repository $tempRepoName `
         -Credential $credential `
         -Scope CurrentUser `
@@ -100,11 +101,30 @@ function Install-PackageRepoProvider {
         -Verbose `
         -ErrorAction Stop
     
-    # Import the module
-    Write-Output "📦 Importing K.PSGallery.PackageRepoProvider..."
-    Import-Module K.PSGallery.PackageRepoProvider -Force -ErrorAction Stop
+    # ═══════════════════════════════════════════════════════════════════════
+    # 🔧 PSResourceGet Issue #1402 Workaround: Lowercase Folder Bug on Linux
+    # On Linux/macOS, Install-PSResource creates module folders in lowercase
+    # which causes Import-Module to fail due to case-sensitive filesystem
+    # See: https://github.com/PowerShell/PSResourceGet/issues/1402
+    # ═══════════════════════════════════════════════════════════════════════
+    if ($IsLinux -or $IsMacOS) {
+        $modulesPath = Join-Path $HOME '.local/share/powershell/Modules'
+        $lowercasePath = Join-Path $modulesPath $moduleName.ToLower()
+        $correctPath = Join-Path $modulesPath $moduleName
+        
+        if ((Test-Path $lowercasePath) -and -not (Test-Path $correctPath)) {
+            Write-Output "🔧 Fixing PSResourceGet #1402: Renaming lowercase module folder..."
+            Write-Output "   From: $lowercasePath"
+            Write-Output "   To:   $correctPath"
+            Rename-Item -Path $lowercasePath -NewName $moduleName -Force
+        }
+    }
     
-    Write-Output "✅ K.PSGallery.PackageRepoProvider installed and imported"
+    # Import the module
+    Write-Output "📦 Importing $moduleName..."
+    Import-Module $moduleName -Force -ErrorAction Stop
+    
+    Write-Output "✅ $moduleName installed and imported"
     
     # Cleanup temp repository
     Unregister-PSResourceRepository -Name $tempRepoName -ErrorAction SilentlyContinue
