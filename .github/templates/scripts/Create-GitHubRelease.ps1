@@ -131,12 +131,12 @@ function Install-SmartagrModule {
             -Token $Token `
             -Trusted
         
-        Install-Package `
+        Install-PackageModule `
             -RepositoryName $repoName `
             -PackageName 'K.PSGallery.Smartagr' `
             -Token $Token
         
-        Import-Package -PackageName 'K.PSGallery.Smartagr'
+        Import-PackageModule -PackageName 'K.PSGallery.Smartagr'
         
         Remove-PackageRepo -RepositoryName $repoName -ErrorAction SilentlyContinue
         
