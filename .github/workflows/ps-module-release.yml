@@ -60,13 +60,13 @@ jobs:
         shell: pwsh
         run: |
           $repoName = '${{ github.event.repository.name }}'
-          & "./.github/templates/scripts/Discover-ModuleName.ps1" -RepositoryName $repoName
+          & "./.github/workflows/scripts/Discover-ModuleName.ps1" -RepositoryName $repoName
 
       - name: 📋 Validate Module Manifest Quality
         id: manifest-quality
         shell: pwsh
         run: |
-          & "./.github/templates/scripts/Test-ModuleManifestQuality.ps1"
+          & "./.github/workflows/scripts/Test-ModuleManifestQuality.ps1"
 
       - name: 🛑 Fail on Manifest Errors
         if: steps.manifest-quality.outputs.manifest-valid == 'false'
@@ -153,7 +153,7 @@ jobs:
         id: determine-version
         shell: pwsh
         run: |
-          & "./.github/templates/scripts/Determine-Version.ps1" `
+          & "./.github/workflows/scripts/Determine-Version.ps1" `
             -ManualVersion '${{ github.event.inputs.version }}' `
             -AutoBumpType '${{ steps.next-version.outputs.bumpType }}' `
             -AutoNewVersion '${{ steps.next-version.outputs.newVersion }}' `
@@ -278,7 +278,7 @@ jobs:
       #   id: update-psd1-module
       #   shell: pwsh
       #   run: |
-      #     & "./.github/templates/scripts/Update-ManifestVersion.ps1" `
+      #     & "./.github/workflows/scripts/Update-ManifestVersion.ps1" `
       #       -NewVersion '${{ steps.determine-version.outputs.final-version }}' `
       #       -BumpType '${{ steps.determine-version.outputs.bump-type }}' `
       #       -CommitChanges $true `
@@ -357,7 +357,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Smartagr handles everything: Draft → Smart Tags (v1, v1.2, latest) → Publish
-          & "./.github/templates/scripts/Create-GitHubRelease.ps1" `
+          & "./.github/workflows/scripts/Create-GitHubRelease.ps1" `
             -Version "${{ needs.prepare-release.outputs.new-version }}" `
             -BumpType "${{ needs.prepare-release.outputs.bump-type }}" `
             -ModuleName "${{ needs.quality-gate.outputs.module-name }}" `
@@ -423,7 +423,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          & "./.github/templates/scripts/Publish-Package.ps1" `
+          & "./.github/workflows/scripts/Publish-Package.ps1" `
             -ModuleName "${{ needs.quality-gate.outputs.module-name }}" `
             -NewVersion "${{ needs.prepare-release.outputs.new-version }}" `
             -GitHubToken $env:GITHUB_TOKEN `
