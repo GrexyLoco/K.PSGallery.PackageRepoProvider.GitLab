@@ -156,14 +156,8 @@ jobs:
           & "./.github/templates/scripts/Determine-Version.ps1" `
             -ManualVersion '${{ github.event.inputs.version }}' `
             -AutoBumpType '${{ steps.next-version.outputs.bumpType }}' `
-            -AutoNewVersion '${{ steps.next-version.outputs.newVersion }}'
-
-      - name: 🛑 Skip if no changes
-        if: steps.determine-version.outputs.should-release == 'false'
-        run: |
-          echo "## 🔁 No Release Required" >> $GITHUB_STEP_SUMMARY
-          echo "ℹ️ No version changes - workflow exits gracefully" >> $GITHUB_STEP_SUMMARY
-          exit 0
+            -AutoNewVersion '${{ steps.next-version.outputs.newVersion }}' `
+            -CurrentVersion '${{ steps.next-version.outputs.currentVersion }}'
 
       # ─────────────────────────────────────────────────────────────────────
       # 📝 Update PSD1 ModuleVersion - Inline approach (no external module)
