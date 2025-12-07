@@ -248,8 +248,27 @@ jobs:
           - Triggered by: ${{ github.actor }}"
             
             echo "📤 Pushing version update..."
-            git push origin ${{ github.ref_name }}
-            echo "✅ PSD1 version update committed and pushed"
+            
+            # 🔄 Retry logic for race conditions (parallel workflows or local pushes)
+            MAX_RETRIES=3
+            RETRY_COUNT=0
+            
+            while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+              if git push origin ${{ github.ref_name }}; then
+                echo "✅ PSD1 version update committed and pushed"
+                break
+              else
+                RETRY_COUNT=$((RETRY_COUNT + 1))
+                if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                  echo "⚠️ Push failed, rebasing and retrying ($RETRY_COUNT/$MAX_RETRIES)..."
+                  git fetch origin ${{ github.ref_name }}
+                  git rebase origin/${{ github.ref_name }}
+                else
+                  echo "❌ Push failed after $MAX_RETRIES attempts"
+                  exit 1
+                fi
+              fi
+            done
             
             # 📝 Summary output
             echo "### 💾 Git Operations" >> $GITHUB_STEP_SUMMARY
