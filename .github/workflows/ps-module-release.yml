@@ -71,8 +71,8 @@ jobs:
       - name: 🛑 Fail on Manifest Errors
         if: steps.manifest-quality.outputs.manifest-valid == 'false'
         run: |
-          echo "❌ Module manifest quality gate failed!" >> $GITHUB_STEP_SUMMARY
-          echo "Please fix the manifest errors before publishing." >> $GITHUB_STEP_SUMMARY
+          echo "❌ Module manifest quality gate failed!" >> "$GITHUB_STEP_SUMMARY"
+          echo "Please fix the manifest errors before publishing." >> "$GITHUB_STEP_SUMMARY"
           exit 1
 
       - name: 🧪 Validate PowerShell Module
@@ -231,7 +231,7 @@ jobs:
           # 📋 Check if there are changes
           if git diff --quiet; then
             echo "ℹ️ No PSD1 changes to commit"
-            echo "ℹ️ **No PSD1 changes** to commit" >> $GITHUB_STEP_SUMMARY
+            echo "ℹ️ **No PSD1 changes** to commit" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "📝 Committing PSD1 version update..."
             git add "*.psd1"
@@ -248,15 +248,15 @@ jobs:
             RETRY_COUNT=0
             
             while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-              if git push origin ${{ github.ref_name }}; then
+              if git push origin "${{ github.ref_name }}"; then
                 echo "✅ PSD1 version update committed and pushed"
                 break
               else
                 RETRY_COUNT=$((RETRY_COUNT + 1))
                 if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
                   echo "⚠️ Push failed, rebasing and retrying ($RETRY_COUNT/$MAX_RETRIES)..."
-                  git fetch origin ${{ github.ref_name }}
-                  git rebase origin/${{ github.ref_name }}
+                  git fetch origin "${{ github.ref_name }}"
+                  git rebase origin/"${{ github.ref_name }}"
                 else
                   echo "❌ Push failed after $MAX_RETRIES attempts"
                   exit 1
@@ -265,8 +265,8 @@ jobs:
             done
             
             # 📝 Summary output
-            echo "### 💾 Git Operations" >> $GITHUB_STEP_SUMMARY
-            echo "✅ **PSD1 version committed and pushed**" >> $GITHUB_STEP_SUMMARY
+            echo "### 💾 Git Operations" >> "$GITHUB_STEP_SUMMARY"
+            echo "✅ **PSD1 version committed and pushed**" >> "$GITHUB_STEP_SUMMARY"
           fi
 
       # ─────────────────────────────────────────────────────────────────────
@@ -287,8 +287,8 @@ jobs:
       - name: 🔄 Re-fetch after version update
         if: steps.determine-version.outputs.should-release == 'true'
         run: |
-          git fetch origin ${{ github.ref_name }}
-          git reset --hard origin/${{ github.ref_name }}
+          git fetch origin "${{ github.ref_name }}"
+          git reset --hard origin/"${{ github.ref_name }}"
           echo "✅ Repository state synchronized"
 
       - name: 📋 Prepare Release Summary
