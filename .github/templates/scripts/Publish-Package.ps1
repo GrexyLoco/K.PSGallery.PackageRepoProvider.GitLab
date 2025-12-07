@@ -80,21 +80,28 @@ function Install-PackageRepoProvider {
     $tempRepoName = 'GHPackages-Temp'
     $uri = "https://nuget.pkg.github.com/$Owner/index.json"
     
+    Write-Output "🔍 Registry URI: $uri"
+    Write-Output "🔍 Owner: $Owner"
+    
     # Remove if exists
     Unregister-PSResourceRepository -Name $tempRepoName -ErrorAction SilentlyContinue
     
     # Register
+    Write-Output "📝 Registering temporary repository: $tempRepoName"
     Register-PSResourceRepository -Name $tempRepoName -Uri $uri -Trusted -ErrorAction Stop
     
     # Install the provider module
+    Write-Output "📥 Installing K.PSGallery.PackageRepoProvider..."
     Install-PSResource -Name 'K.PSGallery.PackageRepoProvider' `
         -Repository $tempRepoName `
         -Credential $credential `
         -Scope CurrentUser `
         -TrustRepository `
+        -Verbose `
         -ErrorAction Stop
     
     # Import the module
+    Write-Output "📦 Importing K.PSGallery.PackageRepoProvider..."
     Import-Module K.PSGallery.PackageRepoProvider -Force -ErrorAction Stop
     
     Write-Output "✅ K.PSGallery.PackageRepoProvider installed and imported"
