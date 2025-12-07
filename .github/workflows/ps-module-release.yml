@@ -43,6 +43,7 @@ jobs:
       skipped-tests: ${{ steps.validation.outputs.skipped-tests }}
       test-duration: ${{ steps.validation.outputs.test-duration }}
       module-name: ${{ steps.discover-module.outputs.module-name }}
+      manifest-valid: ${{ steps.manifest-quality.outputs.manifest-valid }}
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -55,6 +56,19 @@ jobs:
         run: |
           $repoName = '${{ github.event.repository.name }}'
           & "./.github/templates/scripts/Discover-ModuleName.ps1" -RepositoryName $repoName
+
+      - name: 📋 Validate Module Manifest Quality
+        id: manifest-quality
+        shell: pwsh
+        run: |
+          & "./.github/templates/scripts/Test-ModuleManifestQuality.ps1"
+
+      - name: 🛑 Fail on Manifest Errors
+        if: steps.manifest-quality.outputs.manifest-valid == 'false'
+        run: |
+          echo "❌ Module manifest quality gate failed!" >> $GITHUB_STEP_SUMMARY
+          echo "Please fix the manifest errors before publishing." >> $GITHUB_STEP_SUMMARY
+          exit 1
 
       - name: 🧪 Validate PowerShell Module
         id: validation
@@ -314,6 +328,45 @@ jobs:
           fetch-depth: 0
 
       # ─────────────────────────────────────────────────────────────────────
+      # 📦 Install K.PSGallery.Smartagr from GitHub Packages
+      # ─────────────────────────────────────────────────────────────────────
+      - name: 📦 Install K.PSGallery.Smartagr
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          Write-Output "📦 Installing K.PSGallery.Smartagr from GitHub Packages..."
+          
+          $token = $env:GITHUB_TOKEN
+          $owner = '${{ github.repository_owner }}'
+          $uri = "https://nuget.pkg.github.com/$owner/index.json"
+          
+          # Create credential
+          $secureToken = ConvertTo-SecureString $token -AsPlainText -Force
+          $credential = New-Object PSCredential($owner, $secureToken)
+          
+          # Register GitHub Packages repository
+          $repoName = 'GHPackages-Smartagr'
+          Unregister-PSResourceRepository -Name $repoName -ErrorAction SilentlyContinue
+          Register-PSResourceRepository -Name $repoName -Uri $uri -Trusted -ErrorAction Stop
+          
+          # Install Smartagr module
+          Install-PSResource -Name 'K.PSGallery.Smartagr' `
+            -Repository $repoName `
+            -Credential $credential `
+            -Scope CurrentUser `
+            -TrustRepository `
+            -ErrorAction Stop
+          
+          # Import module
+          Import-Module K.PSGallery.Smartagr -Force -ErrorAction Stop
+          
+          Write-Output "✅ K.PSGallery.Smartagr installed and imported successfully"
+          
+          # Cleanup temp repository
+          Unregister-PSResourceRepository -Name $repoName -ErrorAction SilentlyContinue
+
+      # ─────────────────────────────────────────────────────────────────────
       # 🚀 Create Complete Release (via Smartagr: Draft → Smart Tags → Publish)
       # ─────────────────────────────────────────────────────────────────────
       - name: 🚀 Create GitHub Release
@@ -448,4 +501,3 @@ jobs:
           "@
           
           Write-Output $summary >> $env:GITHUB_STEP_SUMMARY
-
