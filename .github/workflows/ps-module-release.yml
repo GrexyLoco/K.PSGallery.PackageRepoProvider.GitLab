@@ -364,6 +364,24 @@ jobs:
             -TrustRepository `
             -ErrorAction Stop
           
+          # ═══════════════════════════════════════════════════════════════════
+          # 🔧 PSResourceGet Issue #1402 Workaround: Lowercase Folder Bug
+          # On Linux, Install-PSResource creates module folders in lowercase
+          # See: https://github.com/PowerShell/PSResourceGet/issues/1402
+          # ═══════════════════════════════════════════════════════════════════
+          $moduleName = 'K.PSGallery.Smartagr'
+          if ($IsLinux -or $IsMacOS) {
+              $modulesPath = "$HOME/.local/share/powershell/Modules"
+              $lowercasePath = Join-Path $modulesPath $moduleName.ToLower()
+              $correctPath = Join-Path $modulesPath $moduleName
+              
+              if ((Test-Path $lowercasePath) -and -not (Test-Path $correctPath)) {
+                  Write-Output "🔧 Fixing PSResourceGet #1402: Renaming lowercase module folder..."
+                  Rename-Item -Path $lowercasePath -NewName $moduleName -Force
+                  Write-Output "✅ Module folder renamed to correct case"
+              }
+          }
+          
           # Import module
           Import-Module K.PSGallery.Smartagr -Force -ErrorAction Stop
           
@@ -507,4 +525,3 @@ jobs:
           "@
           
           Write-Output $summary >> $env:GITHUB_STEP_SUMMARY
-
