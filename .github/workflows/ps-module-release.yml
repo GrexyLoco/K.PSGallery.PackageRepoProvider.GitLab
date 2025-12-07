@@ -335,10 +335,10 @@ jobs:
           Write-Output $summary >> $env:GITHUB_STEP_SUMMARY
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # 🚀 JOB 3: GITHUB RELEASE - Complete Release via Smartagr
+  # 🚀 JOB 3: SMARTAGR RELEASE - Complete Release via Smartagr
   # ═══════════════════════════════════════════════════════════════════════════
-  github-release:
-    name: 🚀 GitHub Release
+  smartagr-release:
+    name: 🚀 Smartagr Release
     needs: [quality-gate, prepare-release]
     if: needs.prepare-release.outputs.should-release == 'true'
     runs-on: ${{ vars.UBUNTU_VERSION || 'ubuntu-24.04' }}
@@ -351,63 +351,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-
-      # ─────────────────────────────────────────────────────────────────────
-      # 📦 Install K.PSGallery.Smartagr from GitHub Packages
-      # ─────────────────────────────────────────────────────────────────────
-      - name: 📦 Install K.PSGallery.Smartagr
-        shell: pwsh
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          Write-Output "📦 Installing K.PSGallery.Smartagr from GitHub Packages..."
-          
-          $token = $env:GITHUB_TOKEN
-          $owner = '${{ github.repository_owner }}'
-          $uri = "https://nuget.pkg.github.com/$owner/index.json"
-          
-          # Create credential
-          $secureToken = ConvertTo-SecureString $token -AsPlainText -Force
-          $credential = New-Object PSCredential($owner, $secureToken)
-          
-          # Register GitHub Packages repository
-          $repoName = 'GHPackages-Smartagr'
-          Unregister-PSResourceRepository -Name $repoName -ErrorAction SilentlyContinue
-          Register-PSResourceRepository -Name $repoName -Uri $uri -Trusted -ErrorAction Stop
-          
-          # Install Smartagr module
-          Install-PSResource -Name 'K.PSGallery.Smartagr' `
-            -Repository $repoName `
-            -Credential $credential `
-            -Scope CurrentUser `
-            -TrustRepository `
-            -ErrorAction Stop
-          
-          # ═══════════════════════════════════════════════════════════════════
-          # 🔧 PSResourceGet Issue #1402 Workaround: Lowercase Folder Bug
-          # On Linux, Install-PSResource creates module folders in lowercase
-          # See: https://github.com/PowerShell/PSResourceGet/issues/1402
-          # ═══════════════════════════════════════════════════════════════════
-          $moduleName = 'K.PSGallery.Smartagr'
-          if ($IsLinux -or $IsMacOS) {
-              $modulesPath = "$HOME/.local/share/powershell/Modules"
-              $lowercasePath = Join-Path $modulesPath $moduleName.ToLower()
-              $correctPath = Join-Path $modulesPath $moduleName
-              
-              if ((Test-Path $lowercasePath) -and -not (Test-Path $correctPath)) {
-                  Write-Output "🔧 Fixing PSResourceGet #1402: Renaming lowercase module folder..."
-                  Rename-Item -Path $lowercasePath -NewName $moduleName -Force
-                  Write-Output "✅ Module folder renamed to correct case"
-              }
-          }
-          
-          # Import module
-          Import-Module K.PSGallery.Smartagr -Force -ErrorAction Stop
-          
-          Write-Output "✅ K.PSGallery.Smartagr installed and imported successfully"
-          
-          # Cleanup temp repository
-          Unregister-PSResourceRepository -Name $repoName -ErrorAction SilentlyContinue
+          ref: ${{ github.ref_name }}
 
       # ─────────────────────────────────────────────────────────────────────
       # 🚀 Create Complete Release (via Smartagr: Draft → Smart Tags → Publish)
@@ -438,7 +382,7 @@ jobs:
           $status = if ($created -eq 'true') { '✅ RELEASED' } else { '❌ FAILED' }
           
           $summary = @"
-          ## 🚀 GitHub Release
+          ## 🚀 Smartagr Release
           
           | Property | Value |
           |----------|-------|
@@ -467,8 +411,8 @@ jobs:
   # ═══════════════════════════════════════════════════════════════════════════
   publish-package:
     name: 📤 Publish to Package Repo
-    needs: [quality-gate, prepare-release, github-release]
-    if: needs.github-release.outputs.release-created == 'true'
+    needs: [quality-gate, prepare-release, smartagr-release]
+    if: needs.smartagr-release.outputs.release-created == 'true'
     runs-on: ${{ vars.UBUNTU_VERSION || 'ubuntu-24.04' }}
     permissions:
       contents: read
@@ -478,6 +422,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          ref: ${{ github.ref_name }}
 
       - name: 📤 Publish to GitHub Packages
         shell: pwsh

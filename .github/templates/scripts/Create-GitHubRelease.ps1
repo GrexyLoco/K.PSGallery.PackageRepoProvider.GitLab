@@ -53,6 +53,125 @@ $releaseTag = "v$Version"
 
 Write-Output "Creating release $releaseTag for $ModuleName"
 
+# ═══════════════════════════════════════════════════════════════════════════
+# 📦 Install K.PSGallery.Smartagr via PackageRepoProvider
+# ═══════════════════════════════════════════════════════════════════════════
+function Install-SmartagrModule {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Token,
+        
+        [Parameter(Mandatory = $true)]
+        [string]$Owner
+    )
+    
+    Write-Output "📦 Installing K.PSGallery.Smartagr via PackageRepoProvider..."
+    
+    # Step 1: Install PackageRepoProvider (if not already available)
+    if (-not (Get-Module -ListAvailable -Name 'K.PSGallery.PackageRepoProvider')) {
+        Write-Output "📥 Installing K.PSGallery.PackageRepoProvider..."
+        
+        try {
+            $secureToken = ConvertTo-SecureString $Token -AsPlainText -Force
+            $credential = New-Object PSCredential($Owner, $secureToken)
+            
+            $tempRepoName = 'GHPackages-Temp'
+            $uri = "https://nuget.pkg.github.com/$Owner/index.json"
+            
+            Unregister-PSResourceRepository -Name $tempRepoName -ErrorAction SilentlyContinue
+            Register-PSResourceRepository -Name $tempRepoName -Uri $uri -Trusted -ErrorAction Stop
+            
+            Install-PSResource -Name 'K.PSGallery.PackageRepoProvider' `
+                -Repository $tempRepoName `
+                -Credential $credential `
+                -Scope CurrentUser `
+                -TrustRepository `
+                -ErrorAction Stop
+            
+            # PSResourceGet #1402 Workaround
+            if ($IsLinux -or $IsMacOS) {
+                $moduleName = 'K.PSGallery.PackageRepoProvider'
+                $modulesPath = Join-Path $HOME '.local/share/powershell/Modules'
+                $lowercasePath = Join-Path $modulesPath $moduleName.ToLower()
+                $correctPath = Join-Path $modulesPath $moduleName
+                
+                if ((Test-Path $lowercasePath) -and -not (Test-Path $correctPath)) {
+                    Rename-Item -Path $lowercasePath -NewName $moduleName -Force
+                }
+            }
+            
+            Unregister-PSResourceRepository -Name $tempRepoName -ErrorAction SilentlyContinue
+        }
+        catch {
+            Write-Error "Failed to install PackageRepoProvider: $($_.Exception.Message)"
+            throw
+        }
+    }
+    
+    # Step 2: Import PackageRepoProvider
+    try {
+        Import-Module K.PSGallery.PackageRepoProvider -Force -ErrorAction Stop
+        Write-Output "✅ PackageRepoProvider loaded"
+    }
+    catch {
+        Write-Error "Failed to import PackageRepoProvider: $($_.Exception.Message)"
+        throw
+    }
+    
+    # Step 3: Install Smartagr via PackageRepoProvider
+    try {
+        Write-Output "📦 Installing K.PSGallery.Smartagr..."
+        
+        $repoName = 'GitHubPackages'
+        $registryUri = "https://nuget.pkg.github.com/$Owner/index.json"
+        
+        Register-PackageRepo `
+            -RepositoryName $repoName `
+            -RegistryUri $registryUri `
+            -Token $Token `
+            -Trusted
+        
+        Install-Package `
+            -RepositoryName $repoName `
+            -PackageName 'K.PSGallery.Smartagr' `
+            -Token $Token
+        
+        Import-Package -PackageName 'K.PSGallery.Smartagr'
+        
+        Remove-PackageRepo -RepositoryName $repoName -ErrorAction SilentlyContinue
+        
+        Write-Output "✅ K.PSGallery.Smartagr installed and imported"
+    }
+    catch {
+        Write-Error "Failed to install Smartagr via PackageRepoProvider: $($_.Exception.Message)"
+        Write-Output "📋 Error details:"
+        Write-Output "  - Repository: $registryUri"
+        Write-Output "  - Package: K.PSGallery.Smartagr"
+        Write-Output "  - Error: $($_.Exception.Message)"
+        throw
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Install Smartagr (required for release management)
+# ─────────────────────────────────────────────────────────────────────────────
+$githubToken = $env:GITHUB_TOKEN
+if (-not $githubToken) {
+    Write-Error "❌ GITHUB_TOKEN environment variable is required but not set"
+    exit 1
+}
+
+$owner = $Repository -split '/' | Select-Object -First 1
+
+try {
+    Install-SmartagrModule -Token $githubToken -Owner $owner
+}
+catch {
+    Write-Error "❌ Failed to install Smartagr module"
+    Write-Output "This is a critical error - release creation cannot proceed without Smartagr"
+    exit 1
+}
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Try Smartagr first (preferred method)
 # ─────────────────────────────────────────────────────────────────────────────
