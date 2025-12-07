@@ -11,6 +11,11 @@ on:
         required: false
         type: string
         default: ''
+      force-version-release:
+        description: '🔓 Force release even if PSD1 version ahead of tag (recovery mode)'
+        required: false
+        type: boolean
+        default: false
       enable-psgallery-notification:
         description: '📣 Enable notification to K.PSGallery pipeline (true/false)'
         required: false
@@ -142,6 +147,7 @@ jobs:
         uses: GrexyLoco/K.Actions.NextVersion@latest
         with:
           branchName: ${{ github.ref_name }}
+          forceVersionRelease: ${{ github.event.inputs.force-version-release || 'false' }}
 
       - name: 🔢 Determine final version
         id: determine-version
@@ -501,3 +507,4 @@ jobs:
           "@
           
           Write-Output $summary >> $env:GITHUB_STEP_SUMMARY
+
