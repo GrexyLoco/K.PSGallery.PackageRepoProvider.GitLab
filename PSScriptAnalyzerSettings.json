@@ -16,7 +16,8 @@
   },
   "Severity": [
     "Error",
-    "Warning",
-    "Information"
+    "Warning"
   ]
 }
+
+
