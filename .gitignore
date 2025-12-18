@@ -1,0 +1,26 @@
+# Build artifacts
+*.nupkg
+*.zip
+
+# PowerShell module artifacts
+*.psm1_
+*.psd1_
+
+# Test results
+TestResults/
+*.trx
+
+# Editors
+.vscode/
+.vs/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
