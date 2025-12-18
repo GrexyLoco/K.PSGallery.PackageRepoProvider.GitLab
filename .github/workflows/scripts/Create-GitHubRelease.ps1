@@ -111,7 +111,7 @@ function Install-SmartagrModule {
     # Step 2: Import PackageRepoProvider
     try {
         Import-Module K.PSGallery.PackageRepoProvider -Force -ErrorAction Stop
-        Write-Output "✅ PackageRepoProvider loaded"
+        Write-Output "✅ K.PSGallery.PackageRepoProvider (v$(Get-Module K.PSGallery.PackageRepoProvider).Version) loaded"
     }
     catch {
         Write-Error "Failed to import PackageRepoProvider: $($_.Exception.Message)"
