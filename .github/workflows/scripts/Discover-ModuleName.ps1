@@ -27,15 +27,15 @@ param(
     [string]$RepositoryName
 )
 
-# Platform-independent output
-Write-Output "🔍 Auto-discovering module name from PSD1 manifest..."
+# Platform-independent output (use Write-Information, NOT Write-Output which goes to stdout!)
+Write-Information -InformationAction Continue "🔍 Auto-discovering module name from PSD1 manifest..."
 
 # Find PSD1 manifest (cross-platform file search)
 $psd1 = Get-ChildItem -Filter '*.psd1' -File -Recurse -Depth 1 | Select-Object -First 1
 
 if ($psd1) {
     $moduleName = $psd1.BaseName
-    Write-Output "✅ Auto-discovered module name: $moduleName"
+    Write-Information -InformationAction Continue "✅ Auto-discovered module name: $moduleName"
     
     # GitHub Actions output
     "module-name=$moduleName" >> $env:GITHUB_OUTPUT
@@ -45,7 +45,7 @@ if ($psd1) {
     "**Auto-discovered:** ``$moduleName``" >> $env:GITHUB_STEP_SUMMARY
     "**From:** ``$($psd1.Name)``" >> $env:GITHUB_STEP_SUMMARY
 } else {
-    Write-Output "⚠️ No PSD1 file found - using repository name as fallback"
+    Write-Information -InformationAction Continue "⚠️ No PSD1 file found - using repository name as fallback"
     
     # GitHub Actions output
     "module-name=$RepositoryName" >> $env:GITHUB_OUTPUT
