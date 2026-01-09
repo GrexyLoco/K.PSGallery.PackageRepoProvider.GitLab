@@ -79,7 +79,7 @@ jobs:
         id: validation
         uses: GrexyLoco/K.Actions.PSModuleValidation@v1
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.K_ACTIONS_PAT }}
           module-name: ${{ steps.discover-module.outputs.module-name }}
 
       - name: 📊 Quality Gate Summary
