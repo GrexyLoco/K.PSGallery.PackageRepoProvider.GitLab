@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Updates PowerShell module manifest version using K.PSGallery.ManifestVersioning.
 
@@ -36,13 +36,13 @@
 param(
     [Parameter(Mandatory = $true)]
     [string]$NewVersion,
-    
+
     [Parameter(Mandatory = $true)]
     [string]$BumpType,
-    
+
     [Parameter(Mandatory = $false)]
     [bool]$CommitChanges = $true,
-    
+
     [Parameter(Mandatory = $false)]
     [string]$TriggeredBy = 'github-actions'
 )
@@ -88,11 +88,11 @@ if ($result.Success) {
     Write-Output "✅ Successfully updated $($psd1.Name) from $($result.OldVersion) to $($result.NewVersion)"
     Write-Output "### Updated Files:" >> $env:GITHUB_STEP_SUMMARY
     Write-Output "- ✅ ``$($psd1.Name)`` → ``$NewVersion`` (was: ``$($result.OldVersion)``)" >> $env:GITHUB_STEP_SUMMARY
-    
+
     if ($CommitChanges) {
         Write-Output "- 💾 **Changes committed and pushed to repository**" >> $env:GITHUB_STEP_SUMMARY
     }
-    
+
     # Set outputs
     "files-updated=1" >> $env:GITHUB_OUTPUT
     "files-found=1" >> $env:GITHUB_OUTPUT

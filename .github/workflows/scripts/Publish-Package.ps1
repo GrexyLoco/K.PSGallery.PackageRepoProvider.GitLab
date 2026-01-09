@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Publishes PowerShell module to GitHub Packages via K.PSGallery.PackageRepoProvider.
 
@@ -36,13 +36,13 @@
 param(
     [Parameter(Mandatory = $true)]
     [string]$ModuleName,
-    
+
     [Parameter(Mandatory = $true)]
     [string]$NewVersion,
-    
+
     [Parameter(Mandatory = $true)]
     [string]$GitHubToken,
-    
+
     [Parameter(Mandatory = $true)]
     [string]$RepositoryOwner
 )
@@ -69,27 +69,27 @@ $repoName = 'GitHubPackages'
 # ═══════════════════════════════════════════════════════════════════════════
 function Install-PackageRepoProvider {
     param([string]$Token, [string]$Owner)
-    
+
     Write-Output "📦 Installing K.PSGallery.PackageRepoProvider from GitHub Packages..."
-    
+
     # Create credential for GitHub Packages
     $secureToken = ConvertTo-SecureString $Token -AsPlainText -Force
     $credential = New-Object PSCredential($Owner, $secureToken)
-    
+
     # Register GitHub Packages as PSResource repository (for installation)
     $tempRepoName = 'GHPackages-Temp'
     $uri = "https://nuget.pkg.github.com/$Owner/index.json"
-    
+
     Write-Output "🔍 Registry URI: $uri"
     Write-Output "🔍 Owner: $Owner"
-    
+
     # Remove if exists
     Unregister-PSResourceRepository -Name $tempRepoName -ErrorAction SilentlyContinue
-    
+
     # Register
     Write-Output "📝 Registering temporary repository: $tempRepoName"
     Register-PSResourceRepository -Name $tempRepoName -Uri $uri -Trusted -ErrorAction Stop
-    
+
     # Install the provider module
     Write-Output "📥 Installing K.PSGallery.PackageRepoProvider..."
     $moduleName = 'K.PSGallery.PackageRepoProvider'
@@ -100,7 +100,7 @@ function Install-PackageRepoProvider {
         -TrustRepository `
         -Verbose `
         -ErrorAction Stop
-    
+
     # ═══════════════════════════════════════════════════════════════════════
     # 🔧 PSResourceGet Issue #1402 Workaround: Lowercase Folder Bug on Linux
     # On Linux/macOS, Install-PSResource creates module folders in lowercase
@@ -111,7 +111,7 @@ function Install-PackageRepoProvider {
         $modulesPath = Join-Path $HOME '.local/share/powershell/Modules'
         $lowercasePath = Join-Path $modulesPath $moduleName.ToLower()
         $correctPath = Join-Path $modulesPath $moduleName
-        
+
         if ((Test-Path $lowercasePath) -and -not (Test-Path $correctPath)) {
             Write-Output "🔧 Fixing PSResourceGet #1402: Renaming lowercase module folder..."
             Write-Output "   From: $lowercasePath"
@@ -119,13 +119,13 @@ function Install-PackageRepoProvider {
             Rename-Item -Path $lowercasePath -NewName $moduleName -Force
         }
     }
-    
+
     # Import the module
     Write-Output "📦 Importing $moduleName..."
     Import-Module $moduleName -Force -ErrorAction Stop
-    
+
     Write-Output "✅ $moduleName installed and imported"
-    
+
     # Cleanup temp repository
     Unregister-PSResourceRepository -Name $tempRepoName -ErrorAction SilentlyContinue
 }
@@ -136,23 +136,23 @@ function Install-PackageRepoProvider {
 try {
     # Step 1: Install PackageRepoProvider from GitHub Packages
     Install-PackageRepoProvider -Token $GitHubToken -Owner $RepositoryOwner
-    
+
     Write-Output "📝 Registering repository: $repoName"
-    
+
     # Step 2: Register the target repository using PackageRepoProvider
     Register-PackageRepo `
         -RepositoryName $repoName `
         -RegistryUri $registryUri `
         -Token $GitHubToken `
         -Trusted
-    
+
     Write-Output "🚀 Publishing module: $ModuleName"
-    
+
     # Step 3: Publish the module
     Publish-Package `
         -RepositoryName $repoName `
         -Token $GitHubToken
-    
+
     # Success summary
     Write-Output "" >> $env:GITHUB_STEP_SUMMARY
     Write-Output "### ✅ Published via K.PSGallery.PackageRepoProvider" >> $env:GITHUB_STEP_SUMMARY
@@ -162,9 +162,9 @@ try {
     Write-Output "- **View Package:** [GitHub Packages](https://github.com/$RepositoryOwner?tab=packages)" >> $env:GITHUB_STEP_SUMMARY
     Write-Output "" >> $env:GITHUB_STEP_SUMMARY
     Write-Output "</details>" >> $env:GITHUB_STEP_SUMMARY
-    
+
     "package-published=true" >> $env:GITHUB_OUTPUT
-    
+
     Write-Output "✅ Successfully published $ModuleName@$NewVersion to GitHub Packages"
 }
 catch {
@@ -173,7 +173,7 @@ catch {
     Write-Output "" >> $env:GITHUB_STEP_SUMMARY
     Write-Output "### ⚠️ Fallback: Publish-PSResource" >> $env:GITHUB_STEP_SUMMARY
     Write-Output "" >> $env:GITHUB_STEP_SUMMARY
-    
+
     # ═══════════════════════════════════════════════════════════════════════
     # 🔄 Fallback: Built-in Publish-PSResource
     # ═══════════════════════════════════════════════════════════════════════
@@ -181,53 +181,53 @@ catch {
         # Create credential
         $secureToken = ConvertTo-SecureString $GitHubToken -AsPlainText -Force
         $credential = New-Object PSCredential($RepositoryOwner, $secureToken)
-        
+
         # Register repository
         Unregister-PSResourceRepository -Name $repoName -ErrorAction SilentlyContinue
         Register-PSResourceRepository -Name $repoName -Uri $registryUri -Trusted -ErrorAction Stop
-        
+
         # Find module manifest using robust discovery
         $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
         $findManifestScript = Join-Path $scriptDir 'Find-ModuleManifest.ps1'
-        
+
         if (-not (Test-Path $findManifestScript)) {
             Write-Warning "Find-ModuleManifest.ps1 not found, using legacy discovery"
             $moduleSubPath = Join-Path -Path '.' -ChildPath $ModuleName
             $modulePath = if (Test-Path $moduleSubPath) { $moduleSubPath } else { '.' }
         } else {
             $manifestResult = & $findManifestScript -ModuleName $ModuleName -SearchPath '.' -Verbose
-            
+
             if (-not $manifestResult.IsValid) {
                 $errorMsg = "Manifest validation failed:`n" + ($manifestResult.Errors -join "`n")
                 throw $errorMsg
             }
-            
+
             if ($manifestResult.Warnings.Count -gt 0) {
                 foreach ($warning in $manifestResult.Warnings) {
                     Write-Warning $warning
                 }
             }
-            
+
             # Use directory containing the manifest
             $modulePath = Split-Path -Parent $manifestResult.ManifestPath
             Write-Output "✅ Using manifest: $($manifestResult.ManifestPath) (Method: $($manifestResult.ValidationMethod))"
         }
-        
+
         # Publish module
         Publish-PSResource `
             -Path $modulePath `
             -Repository $repoName `
             -ApiKey $GitHubToken `
             -ErrorAction Stop
-        
+
         Write-Output "- ✅ Published via Publish-PSResource" >> $env:GITHUB_STEP_SUMMARY
         Write-Output "- **Package:** ``$ModuleName@$NewVersion``" >> $env:GITHUB_STEP_SUMMARY
         Write-Output "- **View Package:** [GitHub Packages](https://github.com/$RepositoryOwner?tab=packages)" >> $env:GITHUB_STEP_SUMMARY
         Write-Output "" >> $env:GITHUB_STEP_SUMMARY
         Write-Output "</details>" >> $env:GITHUB_STEP_SUMMARY
-        
+
         "package-published=true" >> $env:GITHUB_OUTPUT
-        
+
         Write-Output "✅ Successfully published $ModuleName@$NewVersion via fallback"
     }
     catch {
@@ -240,7 +240,7 @@ catch {
         Write-Output "``````" >> $env:GITHUB_STEP_SUMMARY
         Write-Output "" >> $env:GITHUB_STEP_SUMMARY
         Write-Output "</details>" >> $env:GITHUB_STEP_SUMMARY
-        
+
         "package-published=false" >> $env:GITHUB_OUTPUT
         exit 1
     }

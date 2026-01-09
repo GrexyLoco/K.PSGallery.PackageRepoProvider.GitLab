@@ -1,11 +1,11 @@
-<#
+﻿<#
 .SYNOPSIS
     Validates PowerShell module manifest (.psd1) for quality and completeness.
 
 .DESCRIPTION
     This script performs comprehensive validation of module manifests to ensure they meet
     quality standards required for publishing to package repositories (GitHub Packages, PSGallery).
-    
+
     Validates:
     - Required fields (Author, Description, Version, GUID, RootModule)
     - Recommended fields (Tags, ProjectUri, LicenseUri)
@@ -127,37 +127,37 @@ function Test-VersionFormat {
 
 function Test-MeaningfulValue {
     param([string]$Value, [string]$FieldName)
-    
+
     if ([string]::IsNullOrWhiteSpace($Value)) {
         return $false
     }
-    
+
     # Check for EXACT placeholder/dummy values only
     # These are strings that are EXACTLY these values, not containing them
     $exactPlaceholders = @(
-        'Unknown', 'TODO', 'TBD', 'N/A', 'None', 'Test', 
+        'Unknown', 'TODO', 'TBD', 'N/A', 'None', 'Test',
         'Author', 'Company', 'Description', 'Your Name',
         'your-name', 'your-company', 'MyModule', 'Module1',
         'SampleModule', 'ExampleModule', 'TestModule'
     )
-    
+
     # Only check for exact matches (case-insensitive)
     if ($Value -in $exactPlaceholders) {
         return $false
     }
-    
+
     # Check for domain placeholders (these ARE checked as patterns)
     $domainPatterns = @(
-        'example.com', 'example.org', 'your-domain', 
+        'example.com', 'example.org', 'your-domain',
         'placeholder', 'changeme', 'yourname'
     )
-    
+
     foreach ($pattern in $domainPatterns) {
         if ($Value -like "*$pattern*") {
             return $false
         }
     }
-    
+
     # Check for dummy GUIDs
     if ($FieldName -eq 'GUID') {
         $dummyGuids = @(
@@ -168,7 +168,7 @@ function Test-MeaningfulValue {
             return $false
         }
     }
-    
+
     return $true
 }
 
@@ -196,22 +196,22 @@ if ($ManifestPath) {
     # Use robust manifest discovery
     $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
     $findManifestScript = Join-Path $scriptDir 'Find-ModuleManifest.ps1'
-    
+
     if (Test-Path $findManifestScript) {
         Write-Output "🔍 Using Find-ModuleManifest for robust discovery..."
-        
+
         # Extract module name from directory
         $dirName = (Get-Item $ModulePath).Name
-        
+
         $manifestResult = & $findManifestScript -ModuleName $dirName -SearchPath $ModulePath -Verbose
-        
+
         # Report discovery warnings
         if ($manifestResult.Warnings.Count -gt 0) {
             foreach ($warning in $manifestResult.Warnings) {
                 Write-ValidationWarning -Message $warning -Field 'ManifestDiscovery'
             }
         }
-        
+
         # Check if discovery failed
         if (-not $manifestResult.IsValid) {
             foreach ($error in $manifestResult.Errors) {
@@ -223,17 +223,17 @@ if ($ManifestPath) {
             Write-Output "warning-count=$($manifestResult.Warnings.Count)" >> $env:GITHUB_OUTPUT
             exit 1
         }
-        
+
         $psd1Path = $manifestResult.ManifestPath
         Write-Output "✅ Found manifest via $($manifestResult.ValidationMethod) discovery: $psd1Path"
-        
+
     } else {
         # Fallback to legacy discovery
         Write-Output "⚠️ Find-ModuleManifest.ps1 not found, using legacy discovery"
-        
+
         $psd1Files = Get-ChildItem -Path $ModulePath -Filter "*.psd1" -File -Recurse -Depth 1 |
             Where-Object { $_.Name -notlike 'PSScriptAnalyzerSettings*' }
-        
+
         if ($psd1Files.Count -eq 0) {
             Write-ValidationError -Message "No .psd1 manifest file found in '$ModulePath'" -Field 'Manifest'
             Write-Output ""
@@ -242,7 +242,7 @@ if ($ManifestPath) {
             Write-Output "warning-count=0" >> $env:GITHUB_OUTPUT
             exit 1
         }
-        
+
         if ($psd1Files.Count -gt 1) {
             Write-Output "📋 Found multiple .psd1 files, validating primary manifest..."
             # Prefer manifest matching directory name
@@ -290,18 +290,18 @@ Write-Output "──────────────────────
 # ─────────────────────────────────────────────────────────────────────────────
 
 foreach ($field in $RequiredFields) {
-    # Map field names to actual PSModuleInfo properties 
+    # Map field names to actual PSModuleInfo properties
     # (Test-ModuleManifest uses 'Version' instead of 'ModuleVersion')
     $propertyName = switch ($field.Name) {
         'ModuleVersion' { 'Version' }
         default { $field.Name }
     }
-    
+
     $value = $manifest.$propertyName
-    
+
     # Convert to string for consistent handling (Version objects, etc.)
     $valueStr = if ($null -eq $value) { '' } else { $value.ToString() }
-    
+
     if ([string]::IsNullOrWhiteSpace($valueStr)) {
         Write-ValidationError -Message "Missing required field: $($field.Name) ($($field.Description))" -Field $field.Name
     }
@@ -362,12 +362,12 @@ foreach ($field in $RecommendedFields) {
         default { $field.Name }
     }
     $value = $manifest.($propName)
-    
+
     # Handle dictionary types (ExportedFunctions returns ReadOnlyDictionary)
     if ($value -is [System.Collections.IDictionary]) {
         $value = $value.Keys
     }
-    
+
     if ([string]::IsNullOrWhiteSpace($value) -or ($value -is [array] -and $value.Count -eq 0) -or ($value -is [System.Collections.ICollection] -and $value.Count -eq 0)) {
         Write-ValidationWarning -Message "Missing recommended field: $($field.Name) ($($field.Description))" -Field $field.Name
     } else {
@@ -395,7 +395,7 @@ if (-not $psData) {
 } else {
     foreach ($field in $RecommendedPSDataFields) {
         $value = $psData.($field.Name)
-        
+
         if ([string]::IsNullOrWhiteSpace($value) -or ($value -is [array] -and $value.Count -eq 0)) {
             Write-ValidationWarning -Message "Missing PSData.$($field.Name) ($($field.Description))" -Field "PSData.$($field.Name)"
         } else {
@@ -441,7 +441,7 @@ if ($env:GITHUB_STEP_SUMMARY) {
     [void]$summaryBuilder.AppendLine("| ❌ Errors | ``$errorCount`` |")
     [void]$summaryBuilder.AppendLine("| ⚠️ Warnings | ``$warningCount`` |")
     [void]$summaryBuilder.AppendLine("")
-    
+
     if ($errorCount -gt 0) {
         [void]$summaryBuilder.AppendLine("### ❌ Errors")
         [void]$summaryBuilder.AppendLine("")
@@ -450,7 +450,7 @@ if ($env:GITHUB_STEP_SUMMARY) {
         }
         [void]$summaryBuilder.AppendLine("")
     }
-    
+
     if ($warningCount -gt 0) {
         [void]$summaryBuilder.AppendLine("### ⚠️ Warnings")
         [void]$summaryBuilder.AppendLine("")
@@ -459,7 +459,7 @@ if ($env:GITHUB_STEP_SUMMARY) {
         }
         [void]$summaryBuilder.AppendLine("")
     }
-    
+
     [void]$summaryBuilder.AppendLine("</details>")
     [void]$summaryBuilder.AppendLine("")
     $summaryBuilder.ToString() >> $env:GITHUB_STEP_SUMMARY

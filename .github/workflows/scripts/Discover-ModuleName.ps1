@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Auto-discovers PowerShell module name from PSD1 manifest file.
 
@@ -36,20 +36,20 @@ $psd1 = Get-ChildItem -Filter '*.psd1' -File -Recurse -Depth 1 | Select-Object -
 if ($psd1) {
     $moduleName = $psd1.BaseName
     Write-Information -InformationAction Continue "✅ Auto-discovered module name: $moduleName"
-    
+
     # GitHub Actions output
     "module-name=$moduleName" >> $env:GITHUB_OUTPUT
-    
+
     # GitHub Actions summary
     "## 🔍 Module Discovery" >> $env:GITHUB_STEP_SUMMARY
     "**Auto-discovered:** ``$moduleName``" >> $env:GITHUB_STEP_SUMMARY
     "**From:** ``$($psd1.Name)``" >> $env:GITHUB_STEP_SUMMARY
 } else {
     Write-Information -InformationAction Continue "⚠️ No PSD1 file found - using repository name as fallback"
-    
+
     # GitHub Actions output
     "module-name=$RepositoryName" >> $env:GITHUB_OUTPUT
-    
+
     # GitHub Actions summary
     "## 🔍 Module Discovery" >> $env:GITHUB_STEP_SUMMARY
     "**Fallback to repo name:** ``$RepositoryName``" >> $env:GITHUB_STEP_SUMMARY

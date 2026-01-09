@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Finds and validates a PowerShell module manifest file.
 
@@ -73,34 +73,34 @@ if ($exactManifestExists) {
     $result.ValidationMethod = 'Exact'
 } else {
     Write-Verbose "Exact match not found. Searching for any *.psd1 files..."
-    
+
     # Step 2: Fallback to any *.psd1 file
     $allManifests = Get-ChildItem -Path $SearchPath -Filter '*.psd1' -File -ErrorAction SilentlyContinue
-    
+
     if ($allManifests.Count -eq 0) {
         $result.Errors += "No .psd1 files found in: $SearchPath"
         Write-Error "No module manifest files found in $SearchPath"
         return $result
     }
-    
+
     if ($allManifests.Count -gt 1) {
         $manifestList = ($allManifests.Name | ForEach-Object { "  - $_" }) -join "`n"
         $warningMsg = "Multiple .psd1 files found in $SearchPath`:`n$manifestList"
         $result.Warnings += $warningMsg
-        
+
         if ($Strict) {
             $result.Errors += "Strict mode: Multiple .psd1 files found but expected exactly one named '$ModuleName.psd1'"
             Write-Error $result.Errors[-1]
             return $result
         }
-        
+
         Write-Warning $warningMsg
         Write-Warning "Using first file: $($allManifests[0].Name)"
     }
-    
+
     $result.ManifestPath = $allManifests[0].FullName
     $result.ValidationMethod = 'Fallback'
-    
+
     if (-not $Strict) {
         $result.Warnings += "Using fallback manifest discovery (not exact match): $($allManifests[0].Name)"
     }
@@ -112,49 +112,49 @@ Write-Verbose "Validating manifest: $($result.ManifestPath)"
 try {
     # First: Test if it's valid PowerShell syntax
     $null = Test-ModuleManifest -Path $result.ManifestPath -ErrorAction Stop -WarningAction SilentlyContinue
-    
+
     # Second: Load raw manifest data (Import-PowerShellDataFile is more reliable than Test-ModuleManifest for properties)
     $manifestData = Import-PowerShellDataFile -Path $result.ManifestPath -ErrorAction Stop
-    
+
     # Check for essential module properties
     $hasModuleVersion = -not [string]::IsNullOrWhiteSpace($manifestData.ModuleVersion)
     $hasRootModule = -not [string]::IsNullOrWhiteSpace($manifestData.RootModule)
     $hasGuid = -not [string]::IsNullOrWhiteSpace($manifestData.GUID)
-    
+
     if (-not $hasModuleVersion) {
         $result.Errors += "Manifest missing ModuleVersion"
     }
-    
+
     if (-not $hasRootModule) {
         $result.Warnings += "Manifest missing RootModule (may be a manifest-only module)"
     }
-    
+
     if (-not $hasGuid) {
         $result.Warnings += "Manifest missing GUID"
     }
-    
+
     # Check if module name matches (if we used fallback discovery)
     # Note: Raw manifest doesn't have a 'Name' property, so we check filename instead
     $manifestBaseName = [System.IO.Path]::GetFileNameWithoutExtension($result.ManifestPath)
     if ($result.ValidationMethod -eq 'Fallback' -and $manifestBaseName -ne $ModuleName) {
         $warnMsg = "Manifest filename '$manifestBaseName.psd1' does not match expected name '$ModuleName.psd1'"
         $result.Warnings += $warnMsg
-        
+
         if ($Strict) {
             $result.Errors += "Strict mode: $warnMsg"
             $result.IsValid = $false
             Write-Error $result.Errors[-1]
             return $result
         }
-        
+
         Write-Warning $warnMsg
     }
-    
+
     # If no errors, mark as valid
     $result.IsValid = $result.Errors.Count -eq 0
-    
+
     Write-Verbose "Manifest validation complete. Valid: $($result.IsValid)"
-    
+
 } catch {
     $result.Errors += "Manifest validation failed: $($_.Exception.Message)"
     $result.IsValid = $false
